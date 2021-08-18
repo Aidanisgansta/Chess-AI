@@ -1,10 +1,8 @@
 import board 
 import piece_check as pc
+from modify_board import modify_board
 
 import re
-
-BLANKSQUARE = '.'
-OFFBOARDSQUARE = '-'
 
 whites_move = True
 
@@ -24,7 +22,8 @@ piece_moves = {
     "k": (N, E, S, W, N+W, N+E, S+W, S+E, E+E, W+W)
 }
 
-def move_vaildator(move: str) -> bool:
+#1
+def is_correct_format(move: str) -> bool:
     """
     A function that checks if the users move meets the correct format.\n
 
@@ -45,18 +44,7 @@ def move_vaildator(move: str) -> bool:
         print("Please enter a valid move")
         return False
 
-def is_long_distance_piece(piece: str) -> bool:
-    """
-    A function that checks if the piece can move more than one square in a specefic direction
-    (bishop, queen or rook).
-    """
-
-    lwr_piece = piece.casefold()
-
-    if lwr_piece == "b" or lwr_piece == "q" or lwr_piece == "r": 
-        return True
-    return False
-
+#2
 def colour_checker(board_location: int) -> bool:
     """
     A function that checks if the piece moved is the correct colour.
@@ -75,28 +63,86 @@ def blank_checker(board_location: int) -> bool:
 
     square = boardstate[board_location]
 
-    return square == BLANKSQUARE
-def will_be_check(start_square: int, end_square: int):
+    return square == board.BLANKSQUARE
+
+def is_on_board(board_location: int) -> bool:
     """
-    A function that checks if the player will be in check after a move.
+    Checks if the square entered is on the board
     """
 
-    temporary_board = boardstate[:]
-    
-    king_location = king_finder()
+#3
+def is_valid_move(start_square: int, end_square: int) -> bool:
+    """
+    A function that checks if an entered move is legal or not.
+    """
 
-def king_finder():
+    piece_moved = boardstate[start_square].casefold()
+
+    print(start_square)
+
+    available_moves = piece_moves.get(piece_moved)
+    if not whites_move:
+        available_moves = [move * -1 for move in available_moves]
+
+    PIECECHECKDICTIONARY = {
+        "p": pc.pawn_check, 
+        "r": pc.rook_check, 
+        "b": pc.bishop_check, 
+        "k": pc.king_check,
+        "n": pc.knight_check, 
+        "q": pc.queen_check
+        }
+
+    return PIECECHECKDICTIONARY[piece_moved](start_square, end_square, available_moves, boardstate)
+
+#4
+def king_finder(board: list) -> int:
     """
     Finds the current location of the players king.
     """
 
-    for i, piece in enumerate(boardstate):
+    for i, piece in enumerate(board):
         if whites_move:
             if piece == "K":
                 return i
         else:
             if piece == "k":
                 return i
+
+def will_be_check(start_square: int, end_square: int):
+    """
+    A function that checks if the player will be in check after a move.
+    """
+    
+    global whites_move
+
+    temporary_board = boardstate[:]
+
+    # Creates the move by the piece
+    temporary_board = modify_board(temporary_board, start_square, end_square)
+    
+    king_location = king_finder(temporary_board)
+
+    whites_move = not whites_move
+    for i in range(len(temporary_board)):        
+        if is_valid_move(i, king_location):
+            whites_move = not whites_move
+            return True
+
+    whites_move = not whites_move
+    return False
+
+def is_long_distance_piece(piece: str) -> bool:
+    """
+    A function that checks if the piece can move more than one square in a specefic direction
+    (bishop, queen or rook).
+    """
+
+    lwr_piece = piece.casefold()
+
+    if lwr_piece == "b" or lwr_piece == "q" or lwr_piece == "r": 
+        return True
+    return False
 
 def move_gen() -> list:
     """
@@ -128,24 +174,4 @@ def move_gen() -> list:
 
     return moves
 
-def is_valid_move(start_square: int, end_square: int) -> bool:
-    """
-    A function that checks if an entered move is legal or not.
-    """
-
-    piece_moved = boardstate[start_square].casefold()
-
-    available_moves = piece_moves.get(piece_moved)
-    if not whites_move:
-        available_moves = [move * -1 for move in available_moves]
-
-    PIECECHECKDICTIONARY = {
-        "p": pc.pawn_check, 
-        "r": pc.rook_check, 
-        "b": pc.bishop_check, 
-        "k": pc.king_check,
-        "n": pc.knight_check, 
-        "q": pc.queen_check
-        }
-
-    return PIECECHECKDICTIONARY[piece_moved](start_square, end_square, available_moves, boardstate)
+print(will_be_check(22, 41))

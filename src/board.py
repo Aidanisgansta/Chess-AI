@@ -1,5 +1,6 @@
 from math import floor
 
+BLANKSQUARE = '.'
 BOARDSIZE = 8
 
 chessboard = (
